@@ -10,7 +10,7 @@
 #define MAX_SOURCE_SIZE (0x100000)
 #define size_of_matrix 10
 
-typedef struct Matrix {
+typedef struct MyMatrix {
    int size;
    int* matrix;
 } Matrix;
@@ -60,15 +60,15 @@ int main(void) {
 
 	//cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, device_id, 0, &ret);//FOR WINDOWS
 	
-
+	int len = M1.size * M2.size * sizeof( int );
 	// Create memory buffers on the device for each vector 
-	cl_mem M1_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, inpLen, NULL, &ret);
-	cl_mem M2_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, inpLen, NULL, &ret);
-	cl_mem M3_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, opLen, NULL, &ret);
+	cl_mem M1_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, len, NULL, &ret);
+	cl_mem M2_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, len, NULL, &ret);
+	cl_mem M3_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, len, NULL, &ret);
 
 	// Copy the lists A and B to their respective memory buffers
-	ret = clEnqueueWriteBuffer(command_queue, M1_mem_obj, CL_TRUE, 0, inpLen, M1.matrix, 0, NULL, NULL);
-	ret = clEnqueueWriteBuffer(command_queue, M2_mem_obj, CL_TRUE, 0, inpLen, M2.matrix, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer(command_queue, M1_mem_obj, CL_TRUE, 0, len, M1.matrix, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer(command_queue, M2_mem_obj, CL_TRUE, 0, len, M2.matrix, 0, NULL, NULL);
 
 	// Create a program from the kernel source
 	cl_program program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t*)&source_size, &ret);
@@ -92,8 +92,8 @@ int main(void) {
 
 	Matrix M3;
 	M3.size = M1.size;
-	M3.Matrix = malloc( M1.size * M2.size * sizeof(imt) );
-	ret = clEnqueueReadBuffer(command_queue, M3_mem_obj, CL_TRUE, 0, opLen, M3.matrix, 0, NULL, NULL);
+	M3.matrix = malloc( M1.size * M2.size * sizeof(int) );
+	ret = clEnqueueReadBuffer(command_queue, M3_mem_obj, CL_TRUE, 0, len, M3.matrix, 0, NULL, NULL);
 
 	// Display the result to the screen
 	printf("M1 * M2 = \n");
@@ -122,17 +122,20 @@ void print_matrix( Matrix matrix ){
 
 
 Matrix read_matrix(){
-
-	Matrix Matrix;
-	scanf("Enter marix size: %d", & matrix.size);
+					//printf("\nT1\n");
+	Matrix matrix;
+	printf("Enter marix size: ");
+	scanf("%d", & matrix.size);
 	matrix.matrix = malloc( matrix.size * sizeof( int ) );
+					//printf("\nT2\n");
 
 	for (int i = 0; i < matrix.size; ++i)
 	{
 		for (int j = 0; j < matrix.size; ++j)
 		{
 			int e;
-			scanf("\t%d", &e);
+			printf("\ti:%d j:%d = ", i, j );
+			scanf("%d", &e);
 			w_matrix( matrix, i, j, e );
 		}
 		printf("\n");
@@ -140,15 +143,15 @@ Matrix read_matrix(){
 
 	return matrix;
 }
-void print_matrix( Matrix matrix ){
-	for (int i = 0; i < matrix.size; ++i)
-	{
-		for (int j = 0; j < matrix.size; ++j)
-		{
-			r_matrix( matrix, i, j );
-		}
-		printf("\n");
-	}
-}
+// void print_matrix( Matrix matrix ){
+// 	for (int i = 0; i < matrix.size; ++i)
+// 	{
+// 		for (int j = 0; j < matrix.size; ++j)
+// 		{
+// 			r_matrix( matrix, i, j );
+// 		}
+// 		printf("\n");
+// 	}
+// }
 
 
