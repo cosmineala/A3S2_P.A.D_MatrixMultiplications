@@ -8,7 +8,6 @@
 #endif
 
 #define MAX_SOURCE_SIZE (0x100000)
-#define size_of_matrix 10
 
 typedef struct MyMatrix {
    int size;
@@ -26,6 +25,10 @@ int main(void) {
 	Matrix M1 = read_matrix();
 	printf("\n");
 	Matrix M2 = read_matrix();
+
+	print_matrix( M1 );
+	printf("\n");
+	print_matrix( M2 );
 	// Load the kernel source code into the array source_str
 	FILE* fp;
 	char* source_str;
@@ -37,29 +40,30 @@ int main(void) {
 			fprintf(stderr, "Failed to load kernel.\n");
 			exit(1);
 		}
-	
+					printf("\nT1\n");
 	source_str = (char*)malloc(MAX_SOURCE_SIZE);
 	source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
 	fclose(fp);
-
+					printf("\nT2\n");
 	// Get platform and device information
 	cl_platform_id platform_id = NULL;
 	cl_device_id device_id = NULL;
 	cl_uint ret_num_devices;
 	cl_uint ret_num_platforms;
 	cl_int ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+						printf("\nT2.1\n");
 	ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &ret_num_devices);
-
+					printf("\nT3\n");
 	// Create an OpenCL context
 	cl_context context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
-
+					printf("\nT4\n");
 	// !!! Urmatoarele linii sunt foarte importante:
 	//										* Numai una trebuie sa existe cealalta trebuie comentata.
 	//										* In dreptul fiecarei lini este un comentriu in functie de platforma.
 	cl_command_queue command_queue = clCreateCommandQueueWithPropertiesAPPLE(context, device_id, 0, &ret);//FOR MAC OS (APPLE)
 
 	//cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, device_id, 0, &ret);//FOR WINDOWS
-	
+						printf("\nT5\n");
 	int len = M1.size * M2.size * sizeof( int );
 	// Create memory buffers on the device for each vector 
 	cl_mem M1_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, len, NULL, &ret);
@@ -77,7 +81,7 @@ int main(void) {
 	ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
 
 	// Create the OpenCL kernel
-	cl_kernel kernel = clCreateKernel(program, "multiplicationModule", &ret);
+	cl_kernel kernel = clCreateKernel(program, "matix_multiplication", &ret);
 
 	// Set the arguments of the kernel
 	ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&M1_mem_obj);
@@ -85,14 +89,16 @@ int main(void) {
 	ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&M3_mem_obj);
 
 	size_t global_item_size[2];
-	//global_item_size[0] = size_of_matrix;
+
 	global_item_size[0] = M1.size;
 	global_item_size[1] = M2.size;
 	ret = clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, global_item_size, NULL, 0, NULL, NULL);
 
 	Matrix M3;
 	M3.size = M1.size;
+						printf("\nT10\n");
 	M3.matrix = malloc( M1.size * M2.size * sizeof(int) );
+						printf("\nT11\n");
 	ret = clEnqueueReadBuffer(command_queue, M3_mem_obj, CL_TRUE, 0, len, M3.matrix, 0, NULL, NULL);
 
 	// Display the result to the screen
@@ -119,8 +125,6 @@ void print_matrix( Matrix matrix ){
 		printf("\n");
 	}
 }
-
-
 Matrix read_matrix(){
 					//printf("\nT1\n");
 	Matrix matrix;
@@ -143,15 +147,5 @@ Matrix read_matrix(){
 
 	return matrix;
 }
-// void print_matrix( Matrix matrix ){
-// 	for (int i = 0; i < matrix.size; ++i)
-// 	{
-// 		for (int j = 0; j < matrix.size; ++j)
-// 		{
-// 			r_matrix( matrix, i, j );
-// 		}
-// 		printf("\n");
-// 	}
-// }
 
 
